@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Orders - ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght..144,500;9..144,600;9..144,700&family=Inter:wght;500;600;700&family=IBM+Plex+Mono:wght;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<nav class="navbar" id="navbar"></nav>
+
+<div class="container">
+  <h1 class="section-title">My Orders</h1>
+  <div id="banner"></div>
+  <div id="orders-container"><p>Loading...</p></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+if (params.get('placed')) {
+  document.getElementById('banner').innerHTML =
+    `<p class="success-msg">✅ Order #${params.get('placed')} placed successfully!</p>`;
+}
+
+async function loadOrders() {
+  const container = document.getElementById('orders-container');
+  const user = getUser();
+  if (!user) {
+    container.innerHTML = `<p class="empty-state">Please <a href="login.html" style="color:#2563eb;">log in</a> to view your orders.</p>`;
+    return;
+  }
+
+  try {
+    const orders = await apiFetch('/orders');
+    if (orders.length === 0) {
+      container.innerHTML = `<p class="empty-state">No orders yet. <a href="index.html" style="color:#2563eb;">Start shopping</a></p>`;
+      return;
+    }
+
+    container.innerHTML = orders
+      .map(
+        (order) => `
+      <div class="order-card">
+        <div class="order-header">
+          <span>Order #${order.id}</span>
+          <span class="badge">${order.status}</span>
+        </div>
+        <p style="color:#64748b;font-size:0.85rem;">${new Date(order.created_at).toLocaleString()}</p>
+        <div style="margin:0.75rem 0;">
+          ${order.items
+            .map((i) => `<div>${i.name} x${i.quantity} — $${(i.price * i.quantity).toFixed(2)}</div>`)
+            .join('')}
+        </div>
+        <strong>Total: $${order.total.toFixed(2)}</strong>
+      </div>`
+      )
+      .join('');
+  } catch (err) {
+    container.innerHTML = `<p class="error-msg">${err.message}</p>`;
+  }
+}
+
+loadOrders();
+</script>
+</body>
+</html>

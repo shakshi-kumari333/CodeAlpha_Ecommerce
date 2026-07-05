@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Product Details - ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght..144,500;9..144,600;9..144,700&family=Inter:wght;500;600;700&family=IBM+Plex+Mono:wght;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<nav class="navbar" id="navbar"></nav>
+
+<div class="container" id="product-container">
+  <p>Loading...</p>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const productId = params.get('id');
+let currentQty = 1;
+
+async function loadProduct() {
+  const container = document.getElementById('product-container');
+  try {
+    const p = await apiFetch(`/products/${productId}`);
+    container.innerHTML = `
+      <a href="index.html" style="color:#2563eb;">&larr; Back to products</a>
+      <div class="product-detail">
+        <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/350x350?text=No+Image'"/>
+        <div class="details">
+          <div class="category" style="color:${categoryColor(p.category)}">${p.category}</div>
+          <h1>${p.name}</h1>
+          <p style="color:#64748b;margin-top:0.5rem;">${p.description || ''}</p>
+          <div class="price">$${p.price.toFixed(2)}</div>
+          <p style="font-size:0.85rem;color:#64748b;">${p.stock} in stock</p>
+          <div class="qty-selector">
+            <button id="qty-minus">-</button>
+            <span id="qty-value">1</span>
+            <button id="qty-plus">+</button>
+          </div>
+          <button class="btn" id="add-cart-btn">Add to Cart</button>
+          <p class="success-msg" id="add-msg"></p>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('qty-minus').addEventListener('click', () => {
+      if (currentQty > 1) currentQty--;
+      document.getElementById('qty-value').textContent = currentQty;
+    });
+    document.getElementById('qty-plus').addEventListener('click', () => {
+      if (currentQty < p.stock) currentQty++;
+      document.getElementById('qty-value').textContent = currentQty;
+    });
+    document.getElementById('add-cart-btn').addEventListener('click', () => addToCart(p.id));
+  } catch (err) {
+    container.innerHTML = `<p class="error-msg">${err.message}</p>`;
+  }
+}
+
+async function addToCart(id) {
+  const user = getUser();
+  const msg = document.getElementById('add-msg');
+  if (!user) {
+    window.location.href = `login.html?redirect=product.html?id=${id}`;
+    return;
+  }
+  try {
+    await apiFetch('/cart', {
+      method: 'POST',
+      body: JSON.stringify({ productId: id, quantity: currentQty }),
+    });
+    msg.textContent = 'Added to cart!';
+    updateCartBadge();
+  } catch (err) {
+    document.getElementById('add-msg').innerHTML = `<span class="error-msg">${err.message}</span>`;
+  }
+}
+
+loadProduct();
+</script>
+</body>
+</html>

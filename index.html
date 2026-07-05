@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShopEasy - Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght..144,500;9..144,600;9..144,700&family=Inter:wght;500;600;700&family=IBM+Plex+Mono:wght;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<nav class="navbar" id="navbar"></nav>
+
+<section class="hero">
+  <div>
+    <div class="hero-tag">✂ fresh picks, cut for you</div>
+    <h1>Everyday things, <em>chosen well.</em></h1>
+    <p class="tagline">A small, honest selection of gear for your desk, your workouts, and your mornings — no clutter, just the good stuff.</p>
+  </div>
+</section>
+<hr class="cut-line" />
+
+<div class="container">
+  <h1 class="section-title">All Products</h1>
+  <input
+    type="text"
+    id="search-box"
+    placeholder="Search products..."
+    style="padding:0.7rem 1rem;border:2px solid var(--primary);border-radius:999px;width:100%;max-width:320px;margin-top:0.8rem;font-family:'Inter',sans-serif;outline:none;"
+  />
+  <div class="product-grid" id="product-grid"></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+async function loadProducts(search = '') {
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '<p>Loading...</p>';
+  try {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    const products = await apiFetch(`/products${query}`);
+    if (products.length === 0) {
+      grid.innerHTML = '<p class="empty-state">No products found.</p>';
+      return;
+    }
+    grid.innerHTML = products
+      .map(
+        (p) => `
+      <a href="product.html?id=${p.id}" class="product-card" style="--cat-color:${categoryColor(p.category)}">
+        <div class="img-wrap">
+          <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x160?text=No+Image'"/>
+        </div>
+        <div class="info">
+          <div class="category">${p.category}</div>
+          <h3>${p.name}</h3>
+          <div class="price">$${p.price.toFixed(2)}</div>
+        </div>
+      </a>`
+      )
+      .join('');
+  } catch (err) {
+    grid.innerHTML = `<p class="error-msg">${err.message}</p>`;
+  }
+}
+
+document.getElementById('search-box').addEventListener('input', (e) => {
+  loadProducts(e.target.value);
+});
+
+loadProducts();
+</script>
+</body>
+</html>
